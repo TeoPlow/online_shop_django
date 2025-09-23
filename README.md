@@ -1,6 +1,6 @@
 # online_shop_django
 
-Проект онлайн магазина на Django.
+Проект большого онлайн магазина на Django.
 
 ![Цветная штучка](https://img.shields.io/badge/%20onlineshop-Django-blue)
 
