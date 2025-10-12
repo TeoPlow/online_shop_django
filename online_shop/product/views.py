@@ -1,3 +1,4 @@
+import logging
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
@@ -16,12 +17,14 @@ from .serializers import (
     ReviewSerializer,
     TagSerializer,
 )
-import logging
+
 
 log = logging.getLogger(__name__)
 
 
 class CategoryListView(APIView):
+    """Вьюха для списка категорий"""
+
     def get(self, request):
         categories = Category.objects.filter(parent__isnull=True)
         serializer = CategorySerializer(categories, many=True)
@@ -29,6 +32,8 @@ class CategoryListView(APIView):
 
 
 class CatalogView(APIView):
+    """Вьюха для каталога продуктов"""
+
     def get(self, request):
         products = Product.objects.all()
 
@@ -92,6 +97,7 @@ class CatalogView(APIView):
         end = start + limit
 
         serializer = ProductShortSerializer(products[start:end], many=True)
+        log.info(f"Paginating products: page {page}, limit {limit}")
         return Response(
             {
                 "items": serializer.data,
@@ -102,6 +108,8 @@ class CatalogView(APIView):
 
 
 class ProductsPopularView(APIView):
+    """Вьюха для популярных продуктов"""
+
     def get(self, request):
         products = Product.objects.order_by("sort_index", "-rating")[:8]
         serializer = ProductShortSerializer(products, many=True)
@@ -109,13 +117,19 @@ class ProductsPopularView(APIView):
 
 
 class ProductsLimitedView(APIView):
+    """Вьюха для лимитированных продуктов"""
+
     def get(self, request):
-        products = Product.objects.filter(limitedEdition=True).order_by("sort_index")[:16]
+        products = Product.objects.filter(limitedEdition=True).order_by(
+            "sort_index"
+        )[:16]
         serializer = ProductShortSerializer(products, many=True)
         return Response(serializer.data)
 
 
 class SalesView(APIView):
+    """Вьюха для акций"""
+
     def get(self, request):
         sales = SaleItem.objects.all().order_by("-dateFrom")
         limit = int(request.query_params.get("limit", 20))
@@ -136,6 +150,8 @@ class SalesView(APIView):
 
 
 class BannersView(APIView):
+    """Вьюха для баннеров"""
+
     def get(self, request):
         products = Product.objects.all()[:10]
         serializer = ProductShortSerializer(products, many=True)
@@ -143,15 +159,20 @@ class BannersView(APIView):
 
 
 class ProductDetailView(RetrieveAPIView):
+    """Вьюха для деталей продукта"""
+
     queryset = Product.objects.all()
     serializer_class = ProductFullSerializer
     lookup_field = "id"
 
 
 class ProductReviewView(APIView):
+    """Вьюха для отзывов о продукте"""
+
     def post(self, request, id):
         product = Product.objects.filter(id=id).first()
         if not product:
+            log.warning(f"Review creation failed: product {id} not found")
             return Response({"error": "Product not found"}, status=404)
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
@@ -163,13 +184,21 @@ class ProductReviewView(APIView):
             )
             product.reviews.add(review)
             product.save()
+            log.info(
+                f"Review added for product {product.id} by {review.author}"
+            )
             reviews = product.reviews.all()
             out_serializer = ReviewSerializer(reviews, many=True)
             return Response(out_serializer.data, status=200)
+        log.warning(
+            f"Review creation failed for product {id}: {serializer.errors}"
+        )
         return Response(serializer.errors, status=400)
 
 
 class TagListView(APIView):
+    """Вьюха для списка тегов"""
+
     def get(self, request):
         category_id = request.query_params.get("category")
         if category_id:

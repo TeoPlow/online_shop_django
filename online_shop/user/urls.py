@@ -8,6 +8,7 @@ from .views import (
     ProfileAvatarView,
 )
 
+
 urlpatterns = [
     path("sign-in", SignInView.as_view()),
     path("sign-up", SignUpView.as_view()),

@@ -6,7 +6,10 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("product", "0007_remove_product_count_of_sales_alter_product_rating_and_more"),
+        (
+            "product",
+            "0007_remove_product_count_of_sales_alter_product_rating_and_more",
+        ),
     ]
 
     operations = [

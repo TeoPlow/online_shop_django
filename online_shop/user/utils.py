@@ -1,6 +1,7 @@
 import json
 import logging
 
+
 log = logging.getLogger(__name__)
 
 
@@ -8,7 +9,8 @@ def parse(request):
     """
     Эта функция обрабатывает данные, которые криво приходят от фронтенда.
 
-    В виде: {"{\"name\":\"test\",\"username\":\"user\",\"password\":\"pass\"}": ""}
+    Приходит в виде:
+    {"{\"name\":\"test\",\"username\":\"user\",\"password\":\"pass\"}": ""}
 
     Возвращает нормальный словарь.
     """

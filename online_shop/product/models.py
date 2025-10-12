@@ -1,10 +1,12 @@
 from django.db import models
+from user.models import Image
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
-from user.models import Image
 
 
 class Category(models.Model):
+    """Модель категории продукта"""
+
     title = models.CharField(max_length=255)
     image = models.ForeignKey(
         Image,
@@ -21,8 +23,12 @@ class Category(models.Model):
         related_name="subcategories",
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["parent"]),
+        ]
+
     def clean(self):
-        # Ограничение на уровень вложенности - 2
         if self.parent and self.parent.parent:
             raise ValidationError("Subcategory cannot have a subcategory.")
 
@@ -31,13 +37,22 @@ class Category(models.Model):
 
 
 class Tag(models.Model):
+    """Модель тега продукта"""
+
     name = models.CharField(max_length=100)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
 
     def __str__(self):
         return self.name
 
 
 class Review(models.Model):
+    """Модель отзыва о продукте"""
+
     author = models.CharField(max_length=255)
     email = models.EmailField()
     text = models.TextField()
@@ -46,11 +61,18 @@ class Review(models.Model):
     )
     date = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["rate"]),
+        ]
+
     def __str__(self):
         return f"{self.author} ({self.rate})"
 
 
 class Specification(models.Model):
+    """Модель характеристики продукта"""
+
     name = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
 
@@ -59,12 +81,14 @@ class Specification(models.Model):
 
 
 class Product(models.Model):
+    """Модель продукта"""
+
     category = models.ForeignKey(
         "Category", on_delete=models.CASCADE, related_name="products"
     )
     title = models.CharField(max_length=255)
     standart_price = models.DecimalField(max_digits=10, decimal_places=2)
-    count = models.IntegerField()
+    count = models.PositiveIntegerField(default=0)
     date = models.DateTimeField(auto_now_add=True)
     description = models.TextField(blank=True)
     fullDescription = models.TextField(blank=True)
@@ -81,6 +105,13 @@ class Product(models.Model):
     sort_index = models.IntegerField(default=0)
     limitedEdition = models.BooleanField(default=False)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["category"]),
+            models.Index(fields=["title"]),
+            models.Index(fields=["sort_index"]),
+        ]
+
     # Для работы скидок
     @property
     def price(self):
@@ -94,12 +125,19 @@ class Product(models.Model):
 
 
 class SaleItem(models.Model):
+    """Модель акции на продукт"""
+
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name="sales"
     )
     salePrice = models.DecimalField(max_digits=10, decimal_places=2)
     dateFrom = models.CharField(max_length=10)
     dateTo = models.CharField(max_length=10)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["product"]),
+        ]
 
     @property
     def title(self):

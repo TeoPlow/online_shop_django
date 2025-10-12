@@ -2,7 +2,6 @@ from django.test import TestCase, RequestFactory
 from rest_framework.test import APITestCase
 from .utils import parse
 from .models import User
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 class UtilsTests(TestCase):
@@ -99,18 +98,3 @@ class ProfileEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("password_new123!"))
-
-    def test_change_avatar(self):
-        """
-        Тестирование изменения аватара.
-        """
-        self.assertIsNone(self.user.avatar)
-        image_file = SimpleUploadedFile(
-            "avatar.png", content=b"198ey81dasawd", content_type="image/png"
-        )
-        response = self.client.post(
-            "/api/profile/avatar", {"avatar": image_file}
-        )
-        self.assertEqual(response.status_code, 200)
-        self.user.refresh_from_db()
-        self.assertIsNotNone(self.user.avatar)

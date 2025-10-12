@@ -125,7 +125,7 @@ class CatalogViewTest(ProductTestBase):
         """
         Тестирование каталога с фильтром по названию.
         """
-        response = self.client.get(f"/api/catalog?filter[name]=монитор")
+        response = self.client.get("/api/catalog?filter[name]=монитор")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["items"]), 1)
         self.assertEqual(

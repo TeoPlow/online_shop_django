@@ -3,6 +3,8 @@ from django.db import models
 
 
 class Image(models.Model):
+    """Модель изображения"""
+
     src = models.ImageField(upload_to="images/")
     alt = models.CharField(max_length=255, blank=True)
 
@@ -11,6 +13,8 @@ class Image(models.Model):
 
 
 class User(AbstractUser):
+    """Модель пользователя"""
+
     fullName = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True)

@@ -11,6 +11,7 @@ from .views import (
     TagListView,
 )
 
+
 urlpatterns = [
     path("categories", CategoryListView.as_view()),
     path("catalog", CatalogView.as_view()),

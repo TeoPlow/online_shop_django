@@ -6,7 +6,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("product", "0003_remove_saleitem_images_remove_saleitem_price_and_more"),
+        (
+            "product",
+            "0003_remove_saleitem_images_remove_saleitem_price_and_more",
+        ),
     ]
 
     operations = [

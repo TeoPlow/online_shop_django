@@ -9,6 +9,8 @@ from .models import (
 
 
 class ProductAdmin(admin.ModelAdmin):
+    """Админка для продуктов"""
+
     list_display = (
         "id",
         "title",
@@ -26,6 +28,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class SaleItemAdmin(admin.ModelAdmin):
+    """Админка для акций"""
+
     list_display = ("product", "salePrice", "dateFrom", "dateTo")
     fields = ("product", "salePrice", "dateFrom", "dateTo")
 

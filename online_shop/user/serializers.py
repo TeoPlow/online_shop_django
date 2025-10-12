@@ -6,12 +6,16 @@ from .models import (
 
 
 class ImageSerializer(serializers.ModelSerializer):
+    """Сериализатор изображения"""
+
     class Meta:
         model = Image
         fields = ["src", "alt"]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    """Сериализатор профиля пользователя"""
+
     avatar = ImageSerializer(required=False, allow_null=True)
 
     class Meta:

@@ -10,7 +10,10 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("product", "0003_remove_saleitem_images_remove_saleitem_price_and_more"),
+        (
+            "product",
+            "0003_remove_saleitem_images_remove_saleitem_price_and_more",
+        ),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -64,8 +67,14 @@ class Migration(migrations.Migration):
                 ("phone", models.CharField(max_length=20)),
                 ("deliveryType", models.CharField(max_length=50)),
                 ("paymentType", models.CharField(max_length=50)),
-                ("totalCost", models.DecimalField(decimal_places=2, max_digits=10)),
-                ("status", models.CharField(default="accepted", max_length=50)),
+                (
+                    "totalCost",
+                    models.DecimalField(decimal_places=2, max_digits=10),
+                ),
+                (
+                    "status",
+                    models.CharField(default="accepted", max_length=50),
+                ),
                 ("city", models.CharField(max_length=100)),
                 ("address", models.CharField(max_length=255)),
                 (

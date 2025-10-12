@@ -8,6 +8,8 @@ from .models import (
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
+    """Админка для пользователей"""
+
     fieldsets = BaseUserAdmin.fieldsets + (
         (None, {"fields": ("fullName", "phone", "avatar")}),
     )
