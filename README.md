@@ -74,6 +74,18 @@ Bypass password validation and create user anyway? [y/N]: y
 3. **Зайдите в админ панель и работайте с сайтом**:
 [http://localhost:8000/admin](http://localhost:8000/admin)
 
+### Подключение платёжной системы
+
+1. Перед запуском контейнеров, надо создать сеть:
+```bash
+docker network create shop-network
+```
+
+2. Настроить .env и запустить контейнеры
+```bash
+docker-compose up --build
+```
+
 
 ## Конфигурация
 
@@ -93,5 +105,6 @@ Bypass password validation and create user anyway? [y/N]: y
 | `DB_PASSWORD`      | `password`                     | Пароль пользователя базы данных                 |
 | `DB_HOST`          | `db`                           | Хост базы данных (имя сервиса в docker-compose) |
 | `DB_PORT`          | `5432`                         | Порт базы данных                                |
+| `PAYMENT_URL`      | `http://0.0.0.0:5000/payment`  | URL запущенной сторонней платёжной системы      |
 
 Перед запуском в PROD обязательно поменяйте пароли в docker-compose.yml и .env файлах.

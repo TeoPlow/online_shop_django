@@ -1,20 +1,40 @@
 from rest_framework import serializers
 from product.serializers import ProductShortSerializer
-from .models import Order
+from .models import Order, OrderItem, BasketItem
 
 
 class OrderProductSerializer(serializers.ModelSerializer):
     """Сериализатор для продуктов в заказе"""
 
-    price = serializers.SerializerMethodField()
+    price = serializers.DecimalField(
+        source="product.price", max_digits=10, decimal_places=2
+    )
     count = serializers.IntegerField()
 
-    def get_price(self, obj):
-        """Получение цены продукта"""
-        return obj.product.price
+    class Meta:
+        model = OrderItem
+        fields = ["product", "count", "price"]
 
     def to_representation(self, obj):
-        """Преобразование объекта в словарь"""
+        product_data = ProductShortSerializer(obj.product).data
+        product_data["price"] = obj.product.price
+        product_data["count"] = obj.count
+        return product_data
+
+
+class BasketItemSerializer(serializers.ModelSerializer):
+    """Сериализатор для предмета в корзине"""
+
+    price = serializers.DecimalField(
+        source="product.price", max_digits=10, decimal_places=2
+    )
+    count = serializers.IntegerField()
+
+    class Meta:
+        model = BasketItem
+        fields = ["product", "count", "price"]
+
+    def to_representation(self, obj):
         product_data = ProductShortSerializer(obj.product).data
         product_data["price"] = obj.product.price
         product_data["count"] = obj.count

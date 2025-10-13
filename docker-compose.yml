@@ -16,7 +16,6 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ./online_shop:/app
-      - ./images:/app/images
     ports:
       - "8000:8000"
     restart: always

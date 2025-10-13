@@ -17,6 +17,11 @@ from .serializers import (
     ReviewSerializer,
     TagSerializer,
 )
+from rest_framework.status import (
+    HTTP_404_NOT_FOUND,
+    HTTP_200_OK,
+    HTTP_400_BAD_REQUEST,
+)
 
 
 log = logging.getLogger(__name__)
@@ -28,7 +33,7 @@ class CategoryListView(APIView):
     def get(self, request):
         categories = Category.objects.filter(parent__isnull=True)
         serializer = CategorySerializer(categories, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, HTTP_200_OK)
 
 
 class CatalogView(APIView):
@@ -103,7 +108,8 @@ class CatalogView(APIView):
                 "items": serializer.data,
                 "currentPage": page,
                 "lastPage": last_page,
-            }
+            },
+            HTTP_200_OK
         )
 
 
@@ -113,7 +119,7 @@ class ProductsPopularView(APIView):
     def get(self, request):
         products = Product.objects.order_by("sort_index", "-rating")[:8]
         serializer = ProductShortSerializer(products, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, HTTP_200_OK)
 
 
 class ProductsLimitedView(APIView):
@@ -124,7 +130,7 @@ class ProductsLimitedView(APIView):
             "sort_index"
         )[:16]
         serializer = ProductShortSerializer(products, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, HTTP_200_OK)
 
 
 class SalesView(APIView):
@@ -145,7 +151,8 @@ class SalesView(APIView):
                 "items": serializer.data,
                 "currentPage": page,
                 "lastPage": last_page,
-            }
+            },
+            HTTP_200_OK
         )
 
 
@@ -155,15 +162,19 @@ class BannersView(APIView):
     def get(self, request):
         products = Product.objects.all()[:10]
         serializer = ProductShortSerializer(products, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, HTTP_200_OK)
 
 
-class ProductDetailView(RetrieveAPIView):
+class ProductDetailView(APIView):
     """Вьюха для деталей продукта"""
 
-    queryset = Product.objects.all()
-    serializer_class = ProductFullSerializer
-    lookup_field = "id"
+    def get(self, request, id):
+        product = Product.objects.filter(id=id).first()
+        if not product:
+            log.warning(f"Product detail failed: product {id} not found")
+            return Response({"error": "Product not found"}, HTTP_404_NOT_FOUND)
+        serializer = ProductFullSerializer(product)
+        return Response(serializer.data, HTTP_200_OK)
 
 
 class ProductReviewView(APIView):
@@ -173,7 +184,7 @@ class ProductReviewView(APIView):
         product = Product.objects.filter(id=id).first()
         if not product:
             log.warning(f"Review creation failed: product {id} not found")
-            return Response({"error": "Product not found"}, status=404)
+            return Response({"error": "Product not found"}, HTTP_404_NOT_FOUND)
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
             review = Review.objects.create(
@@ -189,11 +200,11 @@ class ProductReviewView(APIView):
             )
             reviews = product.reviews.all()
             out_serializer = ReviewSerializer(reviews, many=True)
-            return Response(out_serializer.data, status=200)
+            return Response(out_serializer.data, HTTP_200_OK)
         log.warning(
             f"Review creation failed for product {id}: {serializer.errors}"
         )
-        return Response(serializer.errors, status=400)
+        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
 
 class TagListView(APIView):
@@ -208,4 +219,4 @@ class TagListView(APIView):
         else:
             tags = Tag.objects.all()
         serializer = TagSerializer(tags, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, HTTP_200_OK)

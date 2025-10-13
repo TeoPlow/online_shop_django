@@ -2,7 +2,7 @@ import logging
 from rest_framework.test import APITestCase
 from user.models import User, Image
 from product.models import Category, Product
-from .models import BasketItem, Order
+from .models import Order, OrderItem
 
 
 log = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ class OrdersViewTest(APITestCase):
         self.assertEqual(order.user, self.user)
         self.assertEqual(
             order.totalCost,
-            self.product1.price * 2 + self.product2.price * 1 + 200,
+            self.product1.price * 2 + self.product2.price * 1,
         )
         self.assertEqual(order.products.count(), 2)
 
@@ -215,11 +215,6 @@ class OrderDetailViewTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         self.product.images.add(self.image)
-        self.basket_item = BasketItem.objects.create(
-            user=self.user,
-            product=self.product,
-            count=2,
-        )
         self.order = Order.objects.create(
             user=self.user,
             fullName=self.user.fullName,
@@ -231,6 +226,11 @@ class OrderDetailViewTest(APITestCase):
             status="accepted",
             city="Москва",
             address="Пушкина, колотушкина, 8",
+        )
+        self.basket_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            count=2,
         )
         self.order.products.add(self.basket_item)
 

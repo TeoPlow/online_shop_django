@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import BasketItem, Order, DeliverySettings
+from .models import BasketItem, Order, DeliverySettings, OrderItem
 
 
 @admin.register(BasketItem)
@@ -10,6 +10,16 @@ class BasketItemAdmin(admin.ModelAdmin):
     list_filter = ("user", "product")
     search_fields = ("user__username", "product__title")
     readonly_fields = ("id", "user", "product", "count", "added_at")
+
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    """Админка для предметов заказа"""
+
+    list_display = ("id", "order", "product", "count")
+    list_filter = ("order", "product")
+    search_fields = ("order__fullName", "product__title")
+    readonly_fields = ("id", "order", "product", "count")
 
 
 @admin.register(Order)
@@ -26,7 +36,6 @@ class OrderAdmin(admin.ModelAdmin):
     )
     list_filter = ("status", "createdAt", "user")
     search_fields = ("fullName", "email", "phone", "city", "address")
-    filter_horizontal = ("products",)
     readonly_fields = (
         "id",
         "user",
@@ -38,7 +47,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 class DeliverySettingsAdmin(admin.ModelAdmin):
-    """Админка для настроек доставки"""
+    """Админка для настроек доставки (один объект)"""
 
     def has_add_permission(self, request):
         return not DeliverySettings.objects.exists()

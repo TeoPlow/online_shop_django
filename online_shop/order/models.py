@@ -39,7 +39,7 @@ class Order(models.Model):
     status = models.CharField(max_length=50, default="accepted")
     city = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
-    products = models.ManyToManyField(BasketItem, related_name="orders")
+    products = models.ManyToManyField("OrderItem", related_name="orders")
 
     class Meta:
         indexes = [
@@ -49,6 +49,23 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} ({self.fullName})"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="items"
+    )
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    count = models.PositiveIntegerField()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["order"]),
+            models.Index(fields=["product"]),
+        ]
+
+    def __str__(self):
+        return f"{self.order} - {self.product} ({self.count})"
 
 
 class DeliverySettings(models.Model):
@@ -69,4 +86,4 @@ class DeliverySettings(models.Model):
 
     class Meta:
         verbose_name = "Delivery settings"
-        verbose_name_plural = "Delivery settings"
+        verbose_name_plural = "Delivery's settings"

@@ -15,10 +15,11 @@ from .models import (
     BasketItem,
     Order,
     DeliverySettings,
+    OrderItem,
 )
 from .serializers import (
-    OrderProductSerializer,
     OrderSerializer,
+    BasketItemSerializer,
 )
 
 
@@ -39,7 +40,7 @@ class BasketView(APIView):
                 HTTP_404_NOT_FOUND,
             )
         items = BasketItem.objects.filter(user=user)
-        serializer = OrderProductSerializer(items, many=True)
+        serializer = BasketItemSerializer(items, many=True)
         return Response(serializer.data)
 
     def post(self, request):
@@ -75,7 +76,7 @@ class BasketView(APIView):
 
         # Возвращаю обновлённую корзину
         items = BasketItem.objects.filter(user=user)
-        serializer = OrderProductSerializer(items, many=True)
+        serializer = BasketItemSerializer(items, many=True)
         return Response(serializer.data)
 
     def delete(self, request):
@@ -109,7 +110,7 @@ class BasketView(APIView):
 
         # Возвращаю обновлённую корзину
         items = BasketItem.objects.filter(user=user)
-        serializer = OrderProductSerializer(items, many=True)
+        serializer = BasketItemSerializer(items, many=True)
         return Response(serializer.data)
 
 
@@ -126,34 +127,17 @@ class OrdersView(APIView):
     def post(self, request):
         """Создание заказа на основе корзины"""
         user = request.user
-        log.info(
-            f"User {user.id} is creating an order. Basket: {request.data}"
-        )
+        log.info(f"User {user.id} is creating an order.")
+        log.debug(f"Request data: {request.data}")
 
         fullName = getattr(user, "fullName", "")
         email = getattr(user, "email", "")
         phone = getattr(user, "phone", "")
         totalCost = 0
-        totalCostWithDelivery = 0
-        settings, _ = DeliverySettings.objects.get_or_create(id=1)
-
-        # Получаю данные из запроса
-        # (но во фронте запросы кривые, поэтому try except)
-        try:
-            deliveryType = request.data.get("deliveryType", "")
-            paymentType = request.data.get("paymentType", "")
-            status = request.data.get("status", "")
-            city = request.data.get("city", "")
-            address = request.data.get("address", "")
-        except Exception:
-            deliveryType = ""
-            paymentType = ""
-            status = ""
-            city = ""
-            address = ""
 
         # Считаю стоимость товаров в корзине
         basket_items = list(BasketItem.objects.filter(user=user))
+        order_items = []
 
         for item in basket_items:
             product = item.product
@@ -161,33 +145,32 @@ class OrdersView(APIView):
             if product:
                 totalCost += product.price * count
 
-        delivery_cost = (
-            settings.express_cost
-            if deliveryType == "express"
-            else settings.regular_cost
-        )
-        if totalCost >= settings.free_from:
-            delivery_cost = 0
-        totalCostWithDelivery = totalCost + delivery_cost
-
         # Создаю заказ
         order = Order.objects.create(
             user=user,
             fullName=fullName,
             email=email,
             phone=phone,
-            deliveryType=deliveryType,
-            paymentType=paymentType,
-            totalCost=totalCostWithDelivery,
-            status=status,
-            city=city,
-            address=address,
+            deliveryType="",
+            paymentType="",
+            totalCost=totalCost,
+            city="",
+            address="",
         )
-        order.products.set(basket_items)
+        # Копирую BasketItems в OrderItems и создаю заказ
+        for item in basket_items:
+            order_item = OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                count=item.count
+            )
+            order_items.append(order_item)
+
+        order.products.set(order_items)
         order.save()
         log.info(
-            "Order %d created for user %d with total %d",
-            order.id, user.id, totalCostWithDelivery
+            "Order %d created for user %d with total price %d",
+            order.id, user.id, totalCost
         )
         return Response({"orderId": order.id}, HTTP_200_OK)
 
@@ -210,9 +193,9 @@ class OrderDetailView(APIView):
             return Response({"error": "Order not found"}, HTTP_404_NOT_FOUND)
 
         # Проверяю наличие товаров в магазине
-        for basket_item in order.products.all():
-            product = basket_item.product
-            if product.count < basket_item.count:
+        for order_item in order.products.all():
+            product = order_item.product
+            if product.count < order_item.count:
                 order.status = "canceled"
                 order.save()
                 log.warning(
@@ -227,18 +210,27 @@ class OrderDetailView(APIView):
                 )
 
         # Обновляю данные по заказу
-        order.deliveryType = request.data.get(
-            "deliveryType", order.deliveryType
-        )
+        order.deliveryType = request.data.get("deliveryType", "ordinary")
         order.fullName = request.data.get("fullName", order.fullName)
         order.phone = request.data.get("phone", order.phone)
         order.paymentType = request.data.get("paymentType", order.paymentType)
         order.city = request.data.get("city", order.city)
         order.address = request.data.get("address", order.address)
 
+        # Считаю итоговую стоимость с учётом доставки
+        settings, _ = DeliverySettings.objects.get_or_create(id=1)
+        delivery_cost = (
+            settings.express_cost
+            if order.deliveryType == "express"
+            else settings.regular_cost
+        )
+        if order.totalCost >= settings.free_from:
+            delivery_cost = 0
+        totalCostWithDelivery = order.totalCost + delivery_cost
+
         # Провожу оплату
         try:
-            amount = {"value": str(order.totalCost), "currency": "RUB"}
+            amount = {"value": str(totalCostWithDelivery), "currency": "RUB"}
             user_id = str(request.user.id)
             order_id = order.id
             response = requests.post(
@@ -274,15 +266,14 @@ class OrderDetailView(APIView):
             log.info(
                 f"Order {order.id} confirmed. Deducting products from stock."
             )
-            for basket_item in order.products.all():
-                product = basket_item.product
-                product.count = max(product.count - basket_item.count, 0)
+            for order_item in order.products.all():
+                product = order_item.product
+                product.count = max(product.count - order_item.count, 0)
                 product.save()
                 log.info(
                     "Product %d stock updated: %d left after order %d",
                     product.id, product.count, order.id
                 )
-                basket_item.delete()
         order.save()
 
         # Очищаю корзину
