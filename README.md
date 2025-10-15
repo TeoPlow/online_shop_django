@@ -86,6 +86,13 @@ docker network create shop-network
 docker-compose up --build
 ```
 
+### Добавление в базу данных backup.sql для примера
+
+1. Прописать команду в терминале (с учётом ваших данных от контейнера и настроек БД):
+```bash
+PGPASSWORD=password psql -U postgres -h localhost -p 5432 -d online_shop_db -f backup.sql
+```
+
 
 ## Конфигурация
 
